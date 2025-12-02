@@ -27,6 +27,21 @@ tools = [
             },
             "required": ["args"]
         }
+    },
+    {
+        "type": "function",
+        "name": "ascii_art",
+        "description": "Render text as simple ASCII art banner for terminal display",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "description": "The text to render as ASCII art"
+                }
+            },
+            "required": ["text"]
+        }
     }
 ]
 
@@ -47,6 +62,10 @@ def curl(args):
     )
     return result.stdout
 
+def ascii_art(text: str) -> str:
+    line = "#" * (len(text) + 4)
+    return f"{line}\n# {text} #\n{line}\n"
+
 def call_model():
     return client.responses.create(
         model="gpt-5",
@@ -62,6 +81,8 @@ def tool_call(fc_item):
         out = ping(**args)
     elif name == "curl":
         out = curl(**args)
+    elif name == "ascii_art":
+        out = ascii_art(**args)
     else:
         out = "unknown tool"
 
@@ -78,7 +99,6 @@ def handle_output(response):
     for item in response.output:
 
         if item.type == "reasoning":
-            log(f"Reasoning:\n{item}\n")
             pending_reasoning = item
             continue
 
@@ -88,7 +108,7 @@ def handle_output(response):
             pending_reasoning = None
 
         if item.type == "function_call":
-            log(f"Function call: {item.name}")
+            log(f"Function call: {item.name} {json.loads(item.arguments)}")
             fc_out = tool_call(item)
             context.extend([item, fc_out])
             updated = True
@@ -100,7 +120,6 @@ def handle_output(response):
     return updated
 
 def process(user_input):
-    log(f"User: {user_input}")
     context.append({"role": "user", "content": user_input})
 
     response = call_model()
@@ -116,3 +135,10 @@ def process(user_input):
     print("\n=== ASSISTANT ===")
     return print(response.output_text)
     print("=================\n")
+
+if __name__ == "__main__":
+    while True:
+        user_input = input("\nYou: ")
+        if user_input.lower() in ['exit', 'quit']:
+            break
+        process(user_input)
