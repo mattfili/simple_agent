@@ -73,24 +73,26 @@ def call_model():
         input=context
     )
 
+
+TOOL_REGISTRY = {
+    "ping": ping,
+    "curl": curl,
+    "ascii_art": ascii_art,
+}
+
 def tool_call(fc_item):
     name = fc_item.name
     args = json.loads(fc_item.arguments)
 
-    if name == "ping":
-        out = ping(**args)
-    elif name == "curl":
-        out = curl(**args)
-    elif name == "ascii_art":
-        out = ascii_art(**args)
-    else:
-        out = "unknown tool"
+    tool_func = TOOL_REGISTRY.get(name, lambda _: "unknown tool")
+    out = tool_func(**args)
 
     return {
         "type": "function_call_output",
         "call_id": fc_item.call_id,
         "output": out
     }
+
 
 def handle_output(response):
     updated = False
