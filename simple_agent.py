@@ -73,7 +73,6 @@ def call_model():
         input=context
     )
 
-
 TOOL_REGISTRY = {
     "ping": ping,
     "curl": curl,
@@ -93,7 +92,6 @@ def tool_call(fc_item):
         "output": out
     }
 
-
 def handle_output(response):
     updated = False
     pending_reasoning = None
@@ -104,7 +102,6 @@ def handle_output(response):
             pending_reasoning = item
             continue
 
-        # If there was reasoning, append it before this item
         if pending_reasoning:
             context.append(pending_reasoning)
             pending_reasoning = None
@@ -116,7 +113,6 @@ def handle_output(response):
             updated = True
             continue
 
-        # Normal assistant message/output_text
         context.append(item)
 
     return updated
@@ -126,12 +122,9 @@ def process(user_input):
 
     response = call_model()
 
-    # Keep looping while tool calls happen
     while handle_output(response):
         response = call_model()
 
-
-    # Store final text as assistant message
     context.append({"role": "assistant", "content": response.output_text})
 
     print("\n=== ASSISTANT ===")
